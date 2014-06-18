@@ -7,12 +7,14 @@
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d/features2d.hpp>
+#include <fstream>
+#include <iostream>
+#include <list>
+#include <iomanip>
+#include <boost/thread.hpp>
 #include <ros/ros.h>
 #include <ros/package.h>
 #include <image_transport/image_transport.h>
-#include <opencv/highgui.h>
-
-#include <gtk/gtk.h>
 
 #define ROS_MIN_MAJOR 1
 #define ROS_MIN_MINOR 8
@@ -23,19 +25,47 @@
 #else
 #include <cv_bridge/CvBridge.h>
 #endif
-
 #include <falsecolor.h>
 
-static const std::string IMAGE_NAME = "Infrared Image";
+class ImagePublisher {
+  ros::NodeHandle nh_;
+  image_transport::ImageTransport it_;
+  image_transport::Publisher image_pub_;
 
-// Platform-specific workaround for #3026: image_view doesn't close when
-// closing image window. On platforms using GTK+ we connect this to the
-// window's "destroy" event so that image_view exits.
-static void destroyNode(GtkWidget *widget, gpointer data)
-{
-  cv::destroyWindow(IMAGE_NAME);
-  exit(0);
-}
+  ImagePublisher():it_(nh_) {
+    std::cout<<"Advertising /ir_image/image_out"<<std::endl;
+    image_pub_ = it_.advertise("/ir_image/image_out", 10);
+    seq_ = 0;
+  }
+  ~ImagePublisher() {
+    delete inst_;
+    inst_ = NULL;
+  }
+
+ public:
+  static ImagePublisher* Instance() {
+    if (inst_ == NULL) {
+      inst_ = new ImagePublisher();
+    }
+    assert(inst_);
+    return inst_;
+  }
+
+  void publish(cv::Mat image){
+    if(image_pub_.getNumSubscribers()){
+      cv_bridge::CvImagePtr cv_ptr(new cv_bridge::CvImage);
+      cv_ptr->encoding = "bgr8";
+      cv_ptr->header.seq = seq_++;
+      cv_ptr->header.stamp = ros::Time::now();
+      cv_ptr->image = image;
+      sensor_msgs::ImagePtr msg = cv_ptr->toImageMsg();
+      image_pub_.publish(msg);
+    }
+  }
+
+  static ImagePublisher* inst_;
+  int seq_;
+};
 
 void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 
@@ -82,15 +112,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
       img_mono8.copyTo(dst_tl);
     }
 
-    cv::imshow(IMAGE_NAME, fullImg);
-
-    char key = cv::waitKey(20);
-    if (key == 'c') {
-      dofalsecolor = !dofalsecolor;
-    }
-    else if (key == 't') {
-      doTempScaling = !doTempScaling;
-    }
+    ImagePublisher::Instance()->publish(fullImg);
 
   }
 
@@ -108,18 +130,15 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "ir_viewer");
   std::string path = ros::package::getPath("ir_viewer");
 
+  ImagePublisher::Instance();
+
   ros::NodeHandle nh;
-  cv::namedWindow(IMAGE_NAME, CV_WINDOW_NORMAL);
 
-  // Register appropriate handler for when user closes the display window
-  GtkWidget *widget = GTK_WIDGET( cvGetWindowHandle((IMAGE_NAME).c_str()) );
-    g_signal_connect(widget, "destroy", G_CALLBACK(destroyNode), NULL);
-
-  cv::startWindowThread();
   image_transport::ImageTransport it(nh);
   image_transport::Subscriber sub = it.subscribe("image", 1, imageCallback);
   ros::spin();
-  cv::destroyWindow(IMAGE_NAME);
 
   return 0;
 }
+
+ImagePublisher* ImagePublisher::inst_ = NULL;

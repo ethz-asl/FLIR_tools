@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <package>
-  <name>ir_viewer</name>
+  <name>ir_converter</name>
   <version>0.0.1</version>
   <description>
 
-	ros viewer for infrared images
+	ros converter for infrared images
 
   </description>
   <url>http://www.asl.ethz.com</url>
@@ -13,20 +13,16 @@
   <license>Apache 2.0</license>
   <buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>ir_converter</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>cv_bridge</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>image_transport</build_depend>
-  <build_depend>gtk2</build_depend>
 
-  <run_depend>ir_converter</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>cv_bridge</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>image_transport</run_depend>
-  <run_depend>gtk2</run_depend>
 
 </package>
