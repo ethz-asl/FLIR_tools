@@ -19,7 +19,7 @@ include_directories(include
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native -Wall -std=c++0x -D__STRICT_ANSI__")
 
 catkin_package(
-  INCLUDE_DIRS include ${catkin_INCLUDE_DIRS}
+  INCLUDE_DIRS ${catkin_INCLUDE_DIRS}
   CATKIN_DEPENDS
   roscpp 
   sensor_msgs 
