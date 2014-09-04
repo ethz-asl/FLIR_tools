@@ -154,7 +154,7 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg) {
 }
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "ir_viewer");
+  ros::init(argc, argv, "ir_converter");
   std::string path = ros::package::getPath("ir_viewer");
 
   ImagePublisher::Instance();
